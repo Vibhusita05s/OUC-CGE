@@ -53,3 +53,51 @@ Designed for real-world classroom deployment
 
 #Project Goal
 To demonstrate how temporal modeling and attention mechanisms can be used to build interpretable, proactive engagement monitoring systems for intelligent learning environments.
+
+## Tech Stack
+- **Programming Language:** Python 3.10  
+- **Deep Learning Framework:** PyTorch  
+- **Temporal Modeling:** GRU (Gated Recurrent Units)  
+- **Attention Mechanism:** Soft Attention over time steps  
+- **Feature Extraction:** SlowFast-based spatiotemporal video features  
+- **Data Processing:** NumPy, Pandas  
+- **Evaluation:** Scikit-learn (ROC, AUC, Confusion Matrix)  
+- **Visualization:** Matplotlib  
+
+## Model Architecture
+The forecasting model consists of:
+- A **GRU encoder** to capture temporal dependencies in engagement features
+- A **temporal attention layer** to identify influential time steps
+- A **fully connected layer** for binary drop prediction
+
+The attention mechanism provides interpretability by highlighting which past moments contribute most to future engagement drops.
+
+## Training Details
+- **Loss Function:** Binary Cross-Entropy Loss  
+- **Optimizer:** Adam  
+- **Prediction Horizon:** 10 seconds  
+- **Sequence Length:** Fixed-length temporal windows  
+- **Threshold for Warning:** 0.6 (configurable)  
+
+## Repository Structure
+OUC-CGE/
+│
+├── build_sequences.py        # Builds temporal engagement sequences
+├── extract_features.py       # Extracts visual features from classroom videos
+├── build_forecast_dataset.py # Generates forecasting labels (future drop)
+├── train_forecast.py         # Trains GRU forecasting model
+├── train_forecast_attention.py
+├── run_warning.py            # Real-time warning inference
+├── run_warning_frozen.py     # Frozen model inference
+├── evaluate_forecast.py      # Evaluation & ROC analysis
+│
+├── data_forecast/            # Processed time-series data (ignored in git)
+├── videos/                   # Classroom video data (not shared)
+├── models/                   # Saved model checkpoints
+└── README.md
+
+## Future Work
+- End-to-end video-to-warning modeling
+- Multi-modal engagement signals (audio, posture, interaction)
+- Continuous engagement regression instead of binary drop prediction
+- Classroom-level real-time deployment
