@@ -1,81 +1,73 @@
-import torch
-from pytorchvideo.models.hub import slowfast_r50
-import cv2
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
 import os
+import csv
+import torch
+import numpy as np
+from pytorchvideo.models.hub import slowfast_r50
+from torchvision.transforms import Compose, Lambda
+from video_utils import load_video_clip
+from utils import video_to_cache_name, save_feature
 
 
-def extract_features(video_path):
-    # Load pretrained SlowFast model
-    model = slowfast_r50(pretrained=True).eval()
-
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        print(f" Could not open {video_path}")
-        return None
-
-    frames= []
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv2.resize(frame, (224, 224))
-        frame = torch.tensor(frame).permute(2, 0, 1).float() / 255.0  # [3, 224, 224]
-        frames.append(frame)
-    cap.release()
-
-    if len(frames) == 0:
-        print(f" No frames found in {video_path}")
-        return None
-
-    # Sample exactly 32 frames
-    num_frames = 32
-    if len(frames) > num_frames:
-        idx = np.linspace(0, len(frames) - 1, num_frames).astype(int)
-        frames = [frames[i] for i in idx]
-    elif len(frames) < num_frames:
-        # Repeat frames if too short
-        while len(frames) < num_frames:
-            frames += frames
-        frames = frames[:num_frames]
-
-    video_tensor = torch.stack(frames)  # [T, 3, 224, 224]
-    video_tensor = video_tensor.permute(1, 0, 2, 3).unsqueeze(0)  # [1, 3, T, H, W]
-
-    # Create Slow and Fast pathways
-    fast_pathway = video_tensor
-    slow_pathway = video_tensor[:, :, ::4, :, :]  # sample every 4th frame
-
-    inputs = [slow_pathway, fast_pathway]
-
-    with torch.no_grad():
-        features = model(inputs)
-
-    return features.cpu().numpy()
+DEVICE = "cpu"
 
 
-def main(csv_path="mini_train.csv"):
-    df = pd.read_csv(csv_path, header=None)
+def load_model():
+    model = slowfast_r50(pretrained=True)
+    model.eval()
+    model = model.to(DEVICE)
+    return model
+
+
+def preprocess(video, num_frames=32):
+    """
+    video: Tensor [T, H, W, C]
+    Returns SlowFast input with fixed temporal sizes
+    """
+
+    # Ensure enough frames
+    if video.shape[0] < num_frames:
+        pad = num_frames - video.shape[0]
+        video = torch.cat([video, video[-1:].repeat(pad, 1, 1, 1)], dim=0)
+
+    video = video[:num_frames]  # (32, H, W, C)
+    video = video.permute(3, 0, 1, 2)  # C T H W
+
+    fast = video                       # 32 frames
+    slow = video[:, ::4, :, :]         # 8 frames
+
+    return [slow.unsqueeze(0), fast.unsqueeze(0)]
+
+
+@torch.no_grad()
+def extract_feature(model, video_path):
+    video = load_video_clip(video_path)  # numpy array
+    video = torch.tensor(video).float() / 255.0
+    inputs = preprocess(video)
+
+    inputs = [i.to(DEVICE) for i in inputs]
+    features = model(inputs)
+
+    return features.squeeze().cpu().numpy()
+
+
+def main():
+    model = load_model()
     os.makedirs("features", exist_ok=True)
 
-    for i, row in tqdm(df.iterrows(), total=len(df)):
-        video_path, label = row[0], row[1]
-        out_name = os.path.basename(video_path).replace(".mp4", ".npy")
-        out_path = os.path.join("features", out_name)
+    with open("sequences.csv") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            for video_path in row[:3]:
+                cache = video_to_cache_name(video_path)
+                out = f"features/{cache}.npy"
 
-        # Skip if already done
-        if os.path.exists(out_path):
-            continue
+                if os.path.exists(out):
+                    continue
 
-        features = extract_features(video_path)
-        if features is not None:
-            np.save(out_path, features)
-            print(f" Saved features for {video_path}")
-        else:
-            print(f" Skipped {video_path} (no frames or error)")
+                print("Extracting:", video_path)
+                feat = extract_feature(model, video_path)
+                save_feature(feat, out)
 
 
 if __name__ == "__main__":
-    main("mini_train.csv")
+    main()
