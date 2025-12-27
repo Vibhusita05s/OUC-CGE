@@ -1,45 +1,44 @@
-#Overview
+![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-red?logo=pytorch)
+![Model](https://img.shields.io/badge/Model-GRU%20%2B%20Attention-green)
+![Task](https://img.shields.io/badge/Task-Time--Series%20Forecasting-orange)
+![Dataset](https://img.shields.io/badge/Dataset-OUC--CGE-blueviolet)
+![Status](https://img.shields.io/badge/Status-Research%20Prototype-yellow)
 
-OUC-CGE is an early warning system for predicting imminent drops in student group engagement in classroom environments. Built on the OUC Classroom Group Engagement (OUC-CGE) dataset, one of the few publicly available datasets focused on group-level engagement in real classroom settings, this project models engagement as a time-series forecasting problem rather than static classification.
-The system predicts whether classroom engagement will drop in the next 10 seconds, enabling proactive educational intervention
+# OUC-CGE: Early Warning System for Classroom Engagement Drop
 
+## Overview
+This project builds an **early warning system** to predict whether **student group engagement will drop in the next 10 seconds** in classroom environments.  
+It is based on the **OUC Classroom Group Engagement (OUC-CGE) dataset**, one of the **few publicly available datasets focused on group-level engagement in real classroom settings**.
 
+Unlike traditional engagement classification approaches, this work models engagement as a **time-series forecasting problem**, enabling proactive intervention rather than post-hoc analysis.
 
-#Dataset: OUC-CGE
+---
 
-The OUC Classroom Group Engagement (OUC-CGE) dataset is designed for analyzing group engagement dynamics using visual cues in real-world classrooms. It contains annotated classroom video clips with three engagement levels (high, medium, low) and supports temporal modeling of engagement transitions.
-Unlike many emotion or engagement datasets that focus on individuals, OUC-CGE captures collective classroom behavior, making it suitable for early warning and forecasting tasks.
+## Dataset: OUC-CGE
+The **OUC-CGE dataset** contains real-world classroom video recordings annotated with **group engagement levels** (high, medium, low).  
+It is specifically designed to capture **temporal engagement dynamics**, making it suitable for forecasting and early-warning tasks.
 
+---
 
-#Problem Formulation
+## Problem Formulation
+The task is formulated as:
 
-Instead of predicting current engagement, this work reformulates the task as:
-Given recent engagement history, will engagement DROP in the next 10 seconds?
+> **Given recent engagement history, will engagement DROP in the next 10 seconds?**
 
-Input: A sequence of visual engagement features
-Output: Probability of future engagement drop
-Task: Binary time-series forecasting (Drop / No Drop)
+- **Input:** Sequence of visual engagement features  
+- **Output:** Probability of future engagement drop  
+- **Task Type:** Binary time-series forecasting  
 
+---
 
-#Methodology
+## Methodology
+- **Feature Extraction:** Spatiotemporal visual features extracted from classroom videos  
+- **Sequence Construction:** Sliding temporal windows with future-horizon labels  
+- **Temporal Model:** GRU (Gated Recurrent Unit)  
+- **Attention Mechanism:** Identifies influential time steps  
+- **Decision Rule:** Warning generated if drop probability exceeds a threshold  
 
--Feature Extraction
-Visual features are extracted from classroom videos using spatiotemporal representations (SlowFast-based features).
--Sequence Construction
-Engagement features are organized into sliding temporal windows. Labels are generated using a future prediction horizon to identify engagement drops.
--Temporal Modeling
-A GRU-based neural network with an Attention mechanism is used to capture temporal dependencies and highlight influential timesteps.
--Early Warning System
-During inference, the model outputs a drop probability. If it exceeds a threshold, a warning is generated indicating a likely engagement drop in the next 10 seconds.
-
-
-#Evaluation
-
-The system is evaluated using:
-Accuracy, Precision, Recall, F1-score
-Confusion Matrix
-ROC Curve (AUC)
-These metrics validate both predictive performance and early warning reliability.
 
 
 #Key Contributions
